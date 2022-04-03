@@ -1,0 +1,22 @@
+#ifndef SCALEL_INCLUDED
+#define SCALEL_INCLUDED
+
+#ifndef SCALEL_CONTROLLER
+#define SCALEL_CONTROLLER "ScaleLController.pmx"
+#endif
+float3 ScaleL_Origin_Ctrl : CONTROLOBJECT < string name = SCALEL_CONTROLLER; string item = "スケール原点"; >;
+float3 ScaleL_Factor_Ctrl : CONTROLOBJECT < string name = SCALEL_CONTROLLER; string item = "スケール倍率"; >;
+float3 ScaleL_Origin_Self : CONTROLOBJECT < string name = "(self)"; string item = "スケール原点"; >;
+float3 ScaleL_Factor_Self : CONTROLOBJECT < string name = "(self)"; string item = "スケール倍率"; >;
+
+static float3 ScaleL_Origin = ScaleL_Origin_Ctrl + ScaleL_Origin_Self;
+static float  ScaleL_Factor = max(ScaleL_Factor_Ctrl.x + ScaleL_Factor_Self.x, 0.0);
+
+float4 ScaleL_ScalePosition(float4 pos) {
+	pos.xyz -= ScaleL_Origin;
+	pos.xyz *= ScaleL_Factor;
+	pos.xyz += ScaleL_Origin;
+	return pos;
+}
+
+#endif
