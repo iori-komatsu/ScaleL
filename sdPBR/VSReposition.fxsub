@@ -1,0 +1,56 @@
+#ifndef SCALEL_INCLUDED
+#define SCALEL_INCLUDED
+
+#ifndef SCALEL_CONTROLLER
+#define SCALEL_CONTROLLER "ScaleLController.pmx"
+#endif
+bool   ScaleL_ControllerExists : CONTROLOBJECT < string name = SCALEL_CONTROLLER; >;
+float3 ScaleL_Origin_Ctrl : CONTROLOBJECT < string name = SCALEL_CONTROLLER; string item = "スケール原点"; >;
+float3 ScaleL_Factor_Ctrl : CONTROLOBJECT < string name = SCALEL_CONTROLLER; string item = "スケール倍率"; >;
+float3 ScaleL_Power_Ctrl : CONTROLOBJECT < string name = SCALEL_CONTROLLER; string item = "スケール冪乗"; >;
+float3 ScaleL_Origin_Self : CONTROLOBJECT < string name = "(self)"; string item = "スケール原点"; >;
+float3 ScaleL_Factor_Self : CONTROLOBJECT < string name = "(self)"; string item = "スケール倍率"; >;
+float3 ScaleL_Power_Self : CONTROLOBJECT < string name = "(self)"; string item = "スケール冪乗"; >;
+
+static float3 ScaleL_Origin = ScaleL_Origin_Ctrl + ScaleL_Origin_Self;
+static float  ScaleL_Factor_Ctrl_ = ScaleL_ControllerExists ? ScaleL_Factor_Ctrl.x : 1.0;
+static float  ScaleL_Factor = max(0.0, ScaleL_Factor_Ctrl_ + ScaleL_Factor_Self.x)
+                            * pow(10.0, ScaleL_Power_Ctrl.x + ScaleL_Power_Self.x);
+
+float4 ScaleL_ScalePosition(float4 pos) {
+	pos.xyz -= ScaleL_Origin;
+	pos.xyz *= ScaleL_Factor;
+	pos.xyz += ScaleL_Origin;
+	return pos;
+}
+
+#endif
+
+#define SCALE_CONTROLLER "sdPBRScaleController.pmx"
+bool _ScaleControllerExists : CONTROLOBJECT < string name = SCALE_CONTROLLER;>;
+float3 _ScaleControllerOrigin : CONTROLOBJECT < string name = SCALE_CONTROLLER; string item="スケール原点";>;
+float _ScaleControllerMagnify : CONTROLOBJECT < string name = SCALE_CONTROLLER; string item="大きくなーれ";>;
+float _ScaleControllerShrink : CONTROLOBJECT < string name = SCALE_CONTROLLER; string item="小さくなーれ";>;
+
+float3 _ScaleSelfOrigin : CONTROLOBJECT < string name = "(self)"; string item="スケール原点";>;
+float _ScaleSelfMagnify : CONTROLOBJECT < string name = "(self)"; string item="大きくなーれ";>;
+float _ScaleSelfShrink : CONTROLOBJECT < string name = "(self)"; string item="小さくなーれ";>;
+
+static float3 _ScaleOrigin = _ScaleControllerExists ? _ScaleControllerOrigin : _ScaleSelfOrigin;
+static float _ScaleRate = _ScaleControllerExists ? exp2((_ScaleControllerMagnify-_ScaleControllerShrink)*10) : exp2((_ScaleSelfMagnify-_ScaleSelfShrink)*10);
+
+
+void VSReposition(VS_REPOSITION_ARGS)
+{
+    float4 wpos = mul(Pos, WorldMatrix);
+
+    wpos.xyz -= _ScaleOrigin;
+    wpos.xyz *= _ScaleRate;
+    wpos.xyz += _ScaleOrigin;
+
+    wpos = ScaleL_ScalePosition(wpos);
+
+    //wpos.xyz *= 2+sin(ftime);
+    //wpos.x += 2+sin(wpos.y*0.5+ftime*2);
+    Pos = mul(wpos,InvWorldMatrix);
+}
